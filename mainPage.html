@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>חישוב שעות שבועי וחודשי</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fa;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        select, input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: #fff;
+            transition: border-color 0.3s;
+        }
+        select:focus, input[type="number"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        label {
+            margin-left: 10px;
+            font-weight: 600;
+            color: #555;
+        }
+        .input-group {
+            display: inline-flex;
+            align-items: center;
+        }
+        .input-group span {
+            margin-left: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: 600;
+        }
+        td {
+            background-color: #fff;
+            transition: background-color 0.2s;
+        }
+        #weeklyTable th:first-child, #weeklyTable td:first-child {
+            background-color: #ecf0f1;
+            font-weight: 600;
+            color: #2c3e50;
+            width: 120px;
+        }
+        #weeklyTable input[type="number"] {
+            width: 60px;
+            margin: 0 auto;
+            display: block;
+        }
+        .calendar td {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            vertical-align: top;
+        }
+        .calendar .date {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 12px;
+            color: #777;
+        }
+        .calendar .hours {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .calendar .holiday-name {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 10px;
+            color: #555;
+        }
+        .vacation { background-color: #ffe6e6; }
+        .holiday { background-color: #ecf0f1; }
+        button {
+            padding: 8px 15px;
+            background-color: #2ecc71;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        #monthlyTotal, #totalAbsenceHours, #sickLeaveDeduction, #dValue, #eValue, #fValue, #yValue {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin: 10px 0;
+        }
+        /* הסתרת עמודות D, E, F כברירת מחדל */
+        .hidden-columns th:nth-child(7), .hidden-columns td:nth-child(7), /* D */
+        .hidden-columns th:nth-child(8), .hidden-columns td:nth-child(8), /* E */
+        .hidden-columns th:nth-child(9), .hidden-columns td:nth-child(9) { /* F */
+            display: none;
+        }
+        /* טבלה לסיכום סופי */
+        #summaryTable {
+            width: 50%;
+            margin: 20px auto;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #summaryTable th, #summaryTable td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        #summaryTable th {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: 600;
+        }
+        #summaryTable td {
+            background-color: #fff;
+        }
+        #summaryTable tr.total-deduction td {
+            background-color: #3498db; /* דגש על סך הכל ימים לניכוי */
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <label>רמת לימוד:</label>
+            <select id="educationLevel">
+                <option value="elementary">יסודי</option>
+                <option value="middle">חטיבת ביניים</option>
+            </select>
+            <label>אחוז משרה:</label>
+            <div class="input-group">
+                <span>%</span>
+                <input type="number" id="jobPercentage" min="0" max="100" value="">
+            </div>
+        </div>
+
+        <table id="weeklyTable">
+            <tr>
+                <th>סוג שעות</th><th>ראשון</th><th>שני</th><th>שלישי</th><th>רביעי</th><th>חמישי</th><th>שישי</th>
+            </tr>
+            <tr>
+                <td>פרונטליות</td>
+                <td><input type="number" class="frontal" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="frontal" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="frontal" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="frontal" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="frontal" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="frontal" min="0" value="" onchange="calculateDay(this)"></td>
+            </tr>
+            <tr>
+                <td>פרטניות</td>
+                <td><input type="number" class="private" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="private" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="private" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="private" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="private" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="private" min="0" value="" onchange="calculateDay(this)"></td>
+            </tr>
+            <tr>
+                <td>שהייה</td>
+                <td><input type="number" class="stay" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="stay" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="stay" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="stay" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="stay" min="0" value="" onchange="calculateDay(this)"></td>
+                <td><input type="number" class="stay" min="0" value="" onchange="calculateDay(this)"></td>
+            </tr>
+            <tr>
+                <td>סך הכל</td>
+                <td class="total">0</td>
+                <td class="total">0</td>
+                <td class="total">0</td>
+                <td class="total">0</td>
+                <td class="total">0</td>
+                <td class="total">0</td>
+            </tr>
+        </table>
+
+        <div style="margin-bottom: 20px;">
+            <label>חודש:</label>
+            <select id="monthSelect" onchange="generateCalendar()">
+                <option value="0">ינואר</option>
+                <option value="1">פברואר</option>
+                <option value="2">מרץ</option>
+                <option value="3">אפריל</option>
+                <option value="4">מאי</option>
+                <option value="5">יוני</option>
+                <option value="6">יולי</option>
+                <option value="7">אוגוסט</option>
+                <option value="8">ספטמבר</option>
+                <option value="9">אוקטובר</option>
+                <option value="10">נובמבר</option>
+                <option value="11">דצמבר</option>
+            </select>
+            <label>שנה:</label>
+            <input type="number" id="yearInput" value="2025" onchange="generateCalendar()">
+        </div>
+
+        <table id="calendarTable" class="calendar"></table>
+        <div id="monthlyTotal"></div>
+
+        <div>
+            <h3>תקופות מחלה</h3>
+            <table id="absenceTable" class="absence-table hidden-columns">
+                <tr>
+                    <th>תאריך התחלה</th>
+                    <th>תאריך סיום</th>
+                    <th>מספר ימי הוראה</th>
+                    <th>שעות היעדרות</th>
+                    <th>ימים לניכוי (ימי הוראה)</th>
+                    <th>מספר ימים שאינם ימי הוראה</th>
+                    <th>D (ימים שאינם ימי הוראה × אחוז משרה)</th>
+                    <th>E (ימים כוללים ללא פגרה × אחוז משרה)</th>
+                    <th>F (E - X)</th>
+                    <th>ימים לניכוי (ימים שאינם ימי הוראה)</th>
+                    <th>סה"כ ימים לניכוי</th>
+                </tr>
+            </table>
+            <button id="showDetailedCalc" onclick="toggleDetailedCalculation()">הצג חישוב מפורט</button>
+            <button onclick="addAbsenceRow()">+</button>
+            <table id="summaryTable">
+                <tr><th>סיכום</th><th>ערך</th></tr>
+                <tr><td>סך שעות העבודה בחודש</td><td id="totalMonthlyHours">0</td></tr>
+                <tr><td>סך שעות ההיעדרות בחודש</td><td id="totalAbsenceHours">0</td></tr>
+                <tr><td>סך ניכוי עבור ימי הוראה</td><td id="totalTeachingDeduction">0</td></tr>
+                <tr><td>סך ניכוי עבור ימים שאינם ימי הוראה</td><td id="totalNonTeachingDeduction">0</td></tr>
+                <tr class="total-deduction"><td>סך הכל ימים לניכוי</td><td id="totalDeduction">0</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const vacations = {
+            2019: [
+                { start: new Date(2019, 9, 13), end: new Date(2019, 9, 22), name: "סוכות" },
+                { start: new Date(2019, 11, 22), end: new Date(2019, 11, 29), name: "חנוכה" },
+                { start: new Date(2020, 3, 8), end: new Date(2020, 3, 16), name: "פסח" },
+                { start: new Date(2020, 6, 1), end: new Date(2020, 7, 31), name: "קיץ" }
+            ],
+            2023: [
+                { start: new Date(2023, 8, 29), end: new Date(2023, 9, 6), name: "סוכות" },
+                { start: new Date(2023, 11, 7), end: new Date(2023, 11, 15), name: "חנוכה" },
+                { start: new Date(2024, 3, 22), end: new Date(2024, 3, 30), name: "פסח" },
+                { start: new Date(2024, 6, 1), end: new Date(2024, 7, 31), name: "קיץ" }
+            ],
+            2024: [
+                { start: new Date(2024, 9, 11), end: new Date(2024, 9, 24), name: "סוכות" },
+                { start: new Date(2024, 11, 27), end: new Date(2025, 0, 2), name: "חנוכה" },
+                { start: new Date(2025, 3, 21), end: new Date(2025, 3, 29), name: "פסח" },
+                { start: new Date(2025, 6, 1), end: new Date(2025, 7, 31), name: "קיץ" }
+            ]
+        };
+
+        const holidays = {
+            2019: [
+                { start: new Date(2019, 8, 29), end: new Date(2019, 9, 1), name: "ראש השנה" },
+                { start: new Date(2019, 9, 8), end: new Date(2019, 9, 9), name: "יום כיפור" },
+                { start: new Date(2020, 2, 9), end: new Date(2020, 2, 10), name: "פורים" }
+            ],
+            2023: [
+                { start: new Date(2023, 8, 15), end: new Date(2023, 8, 17), name: "ראש השנה" },
+                { start: new Date(2023, 8, 24), end: new Date(2023, 8, 25), name: "יום כיפור" },
+                { start: new Date(2024, 2, 23), end: new Date(2024, 2, 24), name: "פורים" }
+            ],
+            2024: [
+                { start: new Date(2024, 9, 2), end: new Date(2024, 9, 4), name: "ראש השנה" },
+                { start: new Date(2024, 9, 11), end: new Date(2024, 9, 11), name: "יום כיפור" },
+                { start: new Date(2025, 2, 14), end: new Date(2025, 2, 16), name: "פורים" }
+            ]
+        };
+
+        function calculateDay(input) {
+            const column = input.parentElement.cellIndex - 1;
+            const table = input.closest('table');
+            const frontal = parseFloat(table.rows[1].cells[column + 1].querySelector('.frontal').value) || 0;
+            const private = parseFloat(table.rows[2].cells[column + 1].querySelector('.private').value) || 0;
+            const stay = parseFloat(table.rows[3].cells[column + 1].querySelector('.stay').value) || 0;
+            const total = frontal + private + stay;
+            table.rows[4].cells[column + 1].textContent = total;
+            generateCalendar();
+            updateAbsenceTotals();
+        }
+
+        function generateCalendar() {
+            const month = parseInt(document.getElementById('monthSelect').value);
+            const year = parseInt(document.getElementById('yearInput').value);
+            const calendarTable = document.getElementById('calendarTable');
+            const weeklyTotals = Array.from(document.querySelectorAll('#weeklyTable .total')).map(cell => parseFloat(cell.textContent));
+            let monthlyTotal = 0;
+
+            calendarTable.innerHTML = '';
+            const headerRow = document.createElement('tr');
+            const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+            days.forEach(day => {
+                const th = document.createElement('th');
+                th.textContent = day;
+                headerRow.appendChild(th);
+            });
+            calendarTable.appendChild(headerRow);
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const yearVacations = vacations[year] || [];
+            const yearHolidays = holidays[year] || [];
+
+            let currentRow = document.createElement('tr');
+            for (let i = 0; i < firstDay; i++) {
+                currentRow.appendChild(document.createElement('td'));
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayOfWeek = date.getDay();
+                if (currentRow.children.length === 7) {
+                    calendarTable.appendChild(currentRow);
+                    currentRow = document.createElement('tr');
+                }
+
+                const td = document.createElement('td');
+                const vacation = yearVacations.find(v => date >= v.start && date <= v.end);
+                const holiday = yearHolidays.find(h => date >= h.start && date <= h.end);
+                if (vacation) {
+                    td.classList.add('vacation');
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'holiday-name';
+                    nameSpan.textContent = vacation.name;
+                    td.appendChild(nameSpan);
+                } else if (holiday) {
+                    td.classList.add('holiday');
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'holiday-name';
+                    nameSpan.textContent = holiday.name;
+                    td.appendChild(nameSpan);
+                }
+
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'date';
+                dateSpan.textContent = day;
+                const hoursSpan = document.createElement('span');
+                hoursSpan.className = 'hours';
+                if (dayOfWeek < 6) { // כולל ימי פגרה, לא מפחיתים
+                    const hours = weeklyTotals[dayOfWeek] || 0;
+                    hoursSpan.textContent = hours;
+                    monthlyTotal += hours;
+                }
+                td.appendChild(dateSpan);
+                td.appendChild(hoursSpan);
+                currentRow.appendChild(td);
+            }
+
+            if (currentRow.children.length > 0) {
+                while (currentRow.children.length < 7) {
+                    currentRow.appendChild(document.createElement('td'));
+                }
+                calendarTable.appendChild(currentRow);
+            }
+
+            document.getElementById('monthlyTotal').textContent = `סך כל שעות בחודש: ${monthlyTotal}`;
+            updateAbsenceTotals();
+        }
+
+        function addAbsenceRow() {
+            const month = parseInt(document.getElementById('monthSelect').value);
+            const year = parseInt(document.getElementById('yearInput').value);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const absenceTable = document.getElementById('absenceTable');
+
+            const row = document.createElement('tr');
+            const startTd = document.createElement('td');
+            const startSelect = document.createElement('select');
+            startSelect.onchange = updateAbsenceTotals;
+            for (let i = 1; i <= daysInMonth; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                startSelect.appendChild(option);
+            }
+            startTd.appendChild(startSelect);
+
+            const endTd = document.createElement('td');
+            const endSelect = document.createElement('select');
+            endSelect.onchange = updateAbsenceTotals;
+            for (let i = 1; i <= daysInMonth; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                endSelect.appendChild(option);
+            }
+            endTd.appendChild(endSelect);
+
+            const teachingDaysTd = document.createElement('td');
+            teachingDaysTd.className = 'teaching-days';
+            teachingDaysTd.textContent = '0';
+
+            const hoursTd = document.createElement('td');
+            hoursTd.className = 'absence-hours';
+            hoursTd.textContent = '0';
+
+            const teachingDeductionTd = document.createElement('td');
+            teachingDeductionTd.className = 'deduction-days';
+            teachingDeductionTd.textContent = '0';
+
+            const nonTeachingDaysTd = document.createElement('td');
+            nonTeachingDaysTd.className = 'non-teaching-days';
+            nonTeachingDaysTd.textContent = '0';
+
+            const dValueTd = document.createElement('td');
+            dValueTd.className = 'd-value';
+            dValueTd.textContent = '0';
+
+            const eValueTd = document.createElement('td');
+            eValueTd.className = 'e-value';
+            eValueTd.textContent = '0';
+
+            const fValueTd = document.createElement('td');
+            fValueTd.className = 'f-value';
+            fValueTd.textContent = '0';
+
+            const yValueTd = document.createElement('td');
+            yValueTd.className = 'y-value';
+            yValueTd.textContent = '0';
+
+            const totalDeductionTd = document.createElement('td');
+            totalDeductionTd.className = 'total-deduction';
+            totalDeductionTd.textContent = '0';
+
+            row.appendChild(startTd);
+            row.appendChild(endTd);
+            row.appendChild(teachingDaysTd);
+            row.appendChild(hoursTd);
+            row.appendChild(teachingDeductionTd);
+            row.appendChild(nonTeachingDaysTd);
+            row.appendChild(dValueTd);
+            row.appendChild(eValueTd);
+            row.appendChild(fValueTd);
+            row.appendChild(yValueTd);
+            row.appendChild(totalDeductionTd);
+            absenceTable.appendChild(row);
+            updateAbsenceTotals();
+        }
+
+        function updateAbsenceTotals() {
+            const month = parseInt(document.getElementById('monthSelect').value);
+            const year = parseInt(document.getElementById('yearInput').value);
+            const weeklyTotals = Array.from(document.querySelectorAll('#weeklyTable .total')).map(cell => parseFloat(cell.textContent));
+            const absenceRows = document.querySelectorAll('#absenceTable tr:not(:first-child)');
+            const monthlyTotal = parseFloat(document.getElementById('monthlyTotal').textContent.split(': ')[1]) || 0;
+            const jobPercentage = parseFloat(document.getElementById('jobPercentage').value) / 100;
+            const yearVacations = vacations[year] || [];
+            const yearHolidays = holidays[year] || [];
+            let totalAbsenceHours = 0;
+            let totalTeachingDeduction = 0;
+            let totalDValue = 0;
+            let totalEValue = 0;
+            let totalFValue = 0;
+            let totalYValue = 0;
+            let totalTotalDeduction = 0;
+
+            absenceRows.forEach(row => {
+                const startDay = parseInt(row.cells[0].querySelector('select').value);
+                const endDay = parseInt(row.cells[1].querySelector('select').value);
+                let totalHours = 0;
+                let teachingDays = 0;
+                let totalDays = 0;
+                let vacationDays = 0;
+
+                for (let day = startDay; day <= endDay; day++) {
+                    const date = new Date(year, month, day);
+                    const dayOfWeek = date.getDay();
+                    const isVacation = yearVacations.some(v => date >= v.start && date <= v.end);
+                    totalDays++; // סופר את כל הימים, כולל שבתות
+                    if (isVacation) vacationDays++; // סופר את ימי הפגרה
+                    if (dayOfWeek < 6 && !isVacation) {
+                        const hours = weeklyTotals[dayOfWeek] || 0;
+                        totalHours += hours;
+                        if (hours > 0) teachingDays++;
+                    }
+                }
+                row.cells[3].textContent = totalHours;
+
+                let teachingDeduction = 0;
+                if (monthlyTotal > 0) {
+                    teachingDeduction = (totalHours * jobPercentage * 22) / monthlyTotal; // X - ימי הוראה לניכוי
+                }
+                row.cells[4].textContent = teachingDeduction.toFixed(2);
+
+                row.cells[2].textContent = teachingDays;
+                const nonTeachingDays = totalDays - teachingDays - vacationDays; // מפחית גם ימי פגרה
+                row.cells[5].textContent = nonTeachingDays;
+
+                // חישוב D: מספר ימים שאינם ימי הוראה כפול אחוז המשרה
+                const dValue = nonTeachingDays * jobPercentage;
+                row.cells[6].textContent = dValue.toFixed(2);
+
+                // חישוב E: מספר הימים הכולל בתקופה (ללא ימי פגרה) כפול אחוז המשרה
+                const eValue = (totalDays - vacationDays) * jobPercentage;
+                row.cells[7].textContent = eValue.toFixed(2);
+
+                // חישוב F: E - X (ימי הוראה לניכוי)
+                const fValue = eValue - teachingDeduction;
+                row.cells[8].textContent = fValue.toFixed(2);
+
+                // חישוב ימים לניכוי (ימים שאינם ימי הוראה)
+                const yValue = Math.min(dValue, fValue);
+                row.cells[9].textContent = yValue.toFixed(2);
+
+                // חישוב סה"כ ימים לניכוי: סכום של ימים לניכוי עבור ימי הוראה וימים שאינם ימי הוראה
+                const totalDeduction = teachingDeduction + yValue;
+                row.cells[10].textContent = totalDeduction.toFixed(2);
+
+                totalAbsenceHours += totalHours;
+                totalTeachingDeduction += teachingDeduction;
+                totalDValue += dValue;
+                totalEValue += eValue;
+                totalFValue += fValue;
+                totalYValue += yValue;
+                totalTotalDeduction += totalDeduction;
+            });
+
+            document.getElementById('totalMonthlyHours').textContent = monthlyTotal;
+            document.getElementById('totalAbsenceHours').textContent = `סך שעות ההיעדרות בחודש: ${totalAbsenceHours}`;
+            document.getElementById('totalTeachingDeduction').textContent = `סך ניכוי עבור ימי הוראה: ${totalTeachingDeduction.toFixed(2)}`;
+            document.getElementById('totalNonTeachingDeduction').textContent = `סך ניכוי עבור ימים שאינם ימי הוראה: ${totalYValue.toFixed(2)}`;
+            document.getElementById('totalDeduction').textContent = `סך הכל ימים לניכוי: ${totalTotalDeduction.toFixed(2)}`;
+            document.getElementById('dValue').textContent = `סך D (ימים שאינם ימי הוראה × אחוז משרה): ${totalDValue.toFixed(2)}`;
+            document.getElementById('eValue').textContent = `סך E (ימים כוללים ללא פגרה × אחוז משרה): ${totalEValue.toFixed(2)}`;
+            document.getElementById('fValue').textContent = `סך F (E - X): ${totalFValue.toFixed(2)}`;
+            document.getElementById('yValue').textContent = `סך ימים לניכוי (ימים שאינם ימי הוראה): ${totalYValue.toFixed(2)}`;
+        }
+
+        function toggleDetailedCalculation() {
+            const table = document.getElementById('absenceTable');
+            table.classList.toggle('hidden-columns');
+        }
+
+        generateCalendar();
+    </script>
+</body>
+</html>
