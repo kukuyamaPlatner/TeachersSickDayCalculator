@@ -9,7 +9,6 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-5BHF4TEBPC');
     </script>
     <style>
@@ -256,14 +255,14 @@
             <select id="monthSelect" onchange="generateCalendar()">
                 <option value="0">ינואר</option>
                 <option value="1">פברואר</option>
-                <option value="2">מרץ</option>
+                <option value="2" selected>מרץ</option>
                 <option value="3">אפריל</option>
                 <option value="4">מאי</option>
                 <option value="5">יוני</option>
                 <option value="6">יולי</option>
                 <option value="7">אוגוסט</option>
                 <option value="8">ספטמבר</option>
-                <option value="9" selected>אוקטובר</option>
+                <option value="9">אוקטובר</option>
                 <option value="10">נובמבר</option>
                 <option value="11">דצמבר</option>
             </select>
@@ -310,24 +309,6 @@
 
     <script>
         const vacations = {
-            2019: [
-                { start: new Date(2019, 9, 13), end: new Date(2019, 9, 22), name: "סוכות" },
-                { start: new Date(2019, 11, 22), end: new Date(2019, 11, 29), name: "חנוכה" },
-                { start: new Date(2020, 3, 8), end: new Date(2020, 3, 16), name: "פסח" },
-                { start: new Date(2020, 6, 1), end: new Date(2020, 7, 31), name: "קיץ" }
-            ],
-            2023: [
-                { start: new Date(2023, 8, 29), end: new Date(2023, 9, 6), name: "סוכות" },
-                { start: new Date(2023, 11, 7), end: new Date(2023, 11, 15), name: "חנוכה" },
-                { start: new Date(2024, 3, 22), end: new Date(2024, 3, 30), name: "פסח" },
-                { start: new Date(2024, 6, 1), end: new Date(2024, 7, 31), name: "קיץ" }
-            ],
-            2024: [
-                { start: new Date(2024, 9, 11), end: new Date(2024, 9, 24), name: "סוכות" },
-                { start: new Date(2024, 11, 27), end: new Date(2025, 0, 2), name: "חנוכה" },
-                { start: new Date(2025, 3, 21), end: new Date(2025, 3, 29), name: "פסח" },
-                { start: new Date(2025, 6, 1), end: new Date(2025, 7, 31), name: "קיץ" }
-            ],
             2025: [
                 { start: new Date(2025, 9, 1), end: new Date(2025, 9, 8), name: "סוכות" },
                 { start: new Date(2025, 11, 25), end: new Date(2026, 0, 1), name: "חנוכה" },
@@ -337,24 +318,9 @@
         };
 
         const holidays = {
-            2019: [
-                { start: new Date(2019, 8, 29), end: new Date(2019, 9, 1), name: "ראש השנה" },
-                { start: new Date(2019, 9, 8), end: new Date(2019, 9, 9), name: "יום כיפור" },
-                { start: new Date(2020, 2, 9), end: new Date(2020, 2, 10), name: "פורים" }
-            ],
-            2023: [
-                { start: new Date(2023, 8, 15), end: new Date(2023, 8, 17), name: "ראש השנה" },
-                { start: new Date(2023, 8, 24), end: new Date(2023, 8, 25), name: "יום כיפור" },
-                { start: new Date(2024, 2, 23), end: new Date(2024, 2, 24), name: "פורים" }
-            ],
-            2024: [
-                { start: new Date(2024, 9, 2), end: new Date(2024, 9, 4), name: "ראש השנה" },
-                { start: new Date(2024, 9, 11), end: new Date(2024, 9, 11), name: "יום כיפור" },
-                { start: new Date(2025, 2, 14), end: new Date(2025, 2, 16), name: "פורים" }
-            ],
             2025: [
                 { start: new Date(2025, 9, 22), end: new Date(2025, 9, 24), name: "ראש השנה" },
-                { start: new Date(2025, 9, 1), end: new Date(2025, 9, 1), name: "יום כיפור" },
+                { start: new Date(2025, 9, 1), end: new Date(2025, 9, 1), name: "יום כיפור" }
             ]
         };
 
@@ -606,6 +572,17 @@
             const table = document.getElementById('absenceTable');
             table.classList.toggle('hidden-columns');
         }
+
+        // Set default month and year to current date on page load
+        window.onload = function() {
+            const now = new Date();
+            const currentMonth = now.getMonth(); // 0-based (0 = January, 2 = March)
+            const currentYear = now.getFullYear(); // 2025
+
+            document.getElementById('monthSelect').value = currentMonth;
+            document.getElementById('yearInput').value = currentYear;
+            generateCalendar();
+        };
 
         generateCalendar();
     </script>
