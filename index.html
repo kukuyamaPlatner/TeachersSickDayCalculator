@@ -204,7 +204,7 @@
             <label>אחוז משרה:</label>
             <div class="input-group">
                 <span>%</span>
-                <input type="number" id="jobPercentage" min="0" max="100" value="" style="width: 150px;">
+                <input type="number" id="jobPercentage" min="0" max="100" value="100" style="width: 150px;">
             </div>
         </div>
 
@@ -581,6 +581,7 @@
 
             document.getElementById('monthSelect').value = currentMonth;
             document.getElementById('yearInput').value = currentYear;
+            document.getElementById('jobPercentage').value = 100; // Set default job percentage to 100%
             generateCalendar();
         };
 
