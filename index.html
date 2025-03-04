@@ -596,7 +596,20 @@
             table.classList.toggle('hidden-columns');
         }
 
-        generateCalendar();
+        // הגדרת החודש הנוכחי כברירת מחדל
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth(); // מחזיר 0-11 (ינואר = 0, דצמבר = 11)
+            const currentYear = currentDate.getFullYear();
+            
+            const monthSelect = document.getElementById('monthSelect');
+            const yearInput = document.getElementById('yearInput');
+            
+            monthSelect.value = currentMonth; // קובע את החודש הנוכחי
+            yearInput.value = currentYear;    // קובע את השנה הנוכחית
+            
+            generateCalendar(); // יצירת הלוח עם החודש והשנה הנוכחיים
+        });
     </script>
 </body>
 </html>
